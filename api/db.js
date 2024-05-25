@@ -11,44 +11,72 @@ const pool = mysql
   .promise();
 
 export async function getUsers() {
-  const [rows] = await pool.query(`SELECT * FROM users`);
-  return rows;
+  try {
+    const [rows] = await pool.query(`
+    SELECT users.*, locations.* FROM users
+    INNER JOIN locations ON users.id = locations.userId
+    `);
+
+    const users = rows.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      age: user.age,
+      profession: user.profession,
+      location: {
+        locationId: user.locationId,
+        city: user.city,
+        country: user.country,
+      },
+    }));
+
+    return users;
+  } catch (error) {
+    throw new Error("Failed to load all users!");
+  }
 }
 
 export async function getUser(id) {
-  const [rows] = await pool.query(`SELECT * FROM users WHERE id = ?`, [id]);
-  return rows[0];
+  try {
+    const [rows] = await pool.query(`SELECT * FROM users WHERE id = ?`, [id]);
+    return rows[0];
+  } catch (error) {
+    throw new Error("Failed to load the user!");
+  }
 }
 
 export async function createUser(user) {
-  const userQuery =
-    "INSERT INTO users (name, email, age, profession) VALUES (?,?,?,?)";
-  const locationQuery =
-    "INSERT INTO locations (city, country, userId) VALUES (?, ?, ?)";
+  try {
+    const userQuery =
+      "INSERT INTO users (name, email, age, profession) VALUES (?,?,?,?)";
+    const locationQuery =
+      "INSERT INTO locations (city, country, userId) VALUES (?, ?, ?)";
 
-  const [userResult] = await pool.query(userQuery, [
-    user.name,
-    user.email,
-    user.age,
-    user.profession,
-  ]);
-  const userId = userResult.insertId;
+    const [userResult] = await pool.query(userQuery, [
+      user.name,
+      user.email,
+      user.age,
+      user.profession,
+    ]);
+    const userId = userResult.insertId;
 
-  const [locationResult] = await pool.query(locationQuery, [
-    user.city,
-    user.country,
-    userId,
-  ]);
-  const createdUser = { ...userResult, locationResult };
-  console.log(createdUser);
-  const newUser = await getUser(createUser.id);
-  return newUser;
+    const [locationResult] = await pool.query(locationQuery, [
+      user.city,
+      user.country,
+      userId,
+    ]);
+
+    const newUser = await getUser(userId);
+    return newUser;
+  } catch (error) {
+    throw new Error("Failed to create user!");
+  }
 }
 // const newUser = {
-//   name: "Sayem",
-//   email: "sayem@gmail.com",
-//   age: 30,
-//   profession: "Student",
+//   name: "Hello 3",
+//   email: "hello@gmail.com",
+//   age: 43,
+//   profession: "Designer",
 //   city: "Dhaka",
 //   country: "Bangladesh",
 // };
