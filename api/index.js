@@ -1,6 +1,6 @@
 import express from "express";
 import "dotenv/config";
-import { getUsers } from "./db.js";
+import { createUser, getUsers } from "./db.js";
 import cors from "cors";
 
 const app = express();
@@ -19,6 +19,17 @@ app.get("/users", async (req, res) => {
   } catch (error) {
     res.status(500).send("Failed to get users");
     console.log("Failed to get users ", error);
+  }
+});
+
+app.post("/users", async (req, res) => {
+  try {
+    const user = req.body;
+    console.log(user);
+    const createdUser = await createUser(user);
+    res.send(createdUser);
+  } catch (error) {
+    res.status(409).send("Failed to create user");
   }
 });
 
