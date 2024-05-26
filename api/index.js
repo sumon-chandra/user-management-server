@@ -14,7 +14,6 @@ app.get("/", (req, res) => {
 app.get("/users", async (req, res) => {
   try {
     const users = await getUsers();
-    // console.log(users);
     res.send(users);
   } catch (error) {
     res.status(500).send("Failed to get users");
@@ -25,7 +24,6 @@ app.get("/users", async (req, res) => {
 app.post("/users", async (req, res) => {
   try {
     const user = req.body;
-    console.log(user);
     const createdUser = await createUser(user);
     res.send(createdUser);
   } catch (error) {

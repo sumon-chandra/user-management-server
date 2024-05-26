@@ -12,8 +12,9 @@ const pool = mysql
 
 export async function getUsers() {
   const [rows] = await pool.query(`
-  SELECT users.*, locations.* FROM users
+  SELECT users.*, locations.*, avatars.* FROM users
   INNER JOIN locations ON users.id = locations.userId
+  INNER JOIN avatars ON users.id = avatars.userId
   `);
 
   const users = rows.map((user) => ({
@@ -27,8 +28,11 @@ export async function getUsers() {
       city: user.city,
       country: user.country,
     },
+    avatar: {
+      avatarId: user.avatarId,
+      url: user.url,
+    },
   }));
-
   return users;
 }
 
@@ -42,6 +46,7 @@ export async function createUser(user) {
     "INSERT INTO users (name, email, age, profession) VALUES (?,?,?,?)";
   const locationQuery =
     "INSERT INTO locations (city, country, userId) VALUES (?, ?, ?)";
+  const avatarQuery = "INSERT INTO avatars (url, userId) VALUES (?, ?)";
 
   const [userResult] = await pool.query(userQuery, [
     user.name,
@@ -54,6 +59,11 @@ export async function createUser(user) {
   const [locationResult] = await pool.query(locationQuery, [
     user.location.city,
     user.location.country,
+    userId,
+  ]);
+
+  const [avatarResult] = await pool.query(avatarQuery, [
+    user.avatar.url,
     userId,
   ]);
 
