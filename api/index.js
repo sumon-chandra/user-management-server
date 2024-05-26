@@ -1,6 +1,6 @@
 import express from "express";
 import "dotenv/config";
-import { createUser, getUsers, updateUser } from "./db.js";
+import { createUser, deleteUser, getUsers, updateUser } from "./db.js";
 import cors from "cors";
 
 const app = express();
@@ -42,6 +42,17 @@ app.put("/users/:id", async (req, res) => {
   } catch (error) {
     res.status(500).send("Failed to update user");
     console.log("Failed to update user ", error);
+  }
+});
+
+app.delete("/users/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const deletedUser = await deleteUser(id);
+    res.send(deletedUser);
+  } catch (error) {
+    res.status(500).send("Failed to delete user");
+    console.log("Failed to delete user ", error);
   }
 });
 

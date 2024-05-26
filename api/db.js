@@ -61,20 +61,6 @@ export async function createUser(user) {
   return newUser;
 }
 
-const newUser = {
-  name: "Testing",
-  email: "hello@gmail.com",
-  age: 43,
-  profession: "Designer",
-  location: {
-    city: "Dhaka",
-    country: "Bangladesh",
-  },
-};
-
-// const user = await createUser(newUser);
-// console.log(user);
-
 export async function updateUser(id, user) {
   const updateUserQuery = `
   UPDATE users
@@ -105,10 +91,18 @@ export async function updateUser(id, user) {
   }
 }
 
-export async function deleteUser(id) {
-  const [result] = await pool.query(`DELETE FROM users WHERE id = ?`, [id]);
-  console.log(result);
+export async function deleteUser(userId) {
+  const deleteLocationQuery = `
+    DELETE FROM locations WHERE userId = ?
+  `;
+  const deleteUserQuery = `
+    DELETE FROM users WHERE id = ?
+  `;
+  try {
+    await pool.query(deleteLocationQuery, [userId]);
+    const [result] = await pool.query(deleteUserQuery, [userId]);
+    return result;
+  } catch (error) {
+    console.error(error);
+  }
 }
-
-// const deletedUser = await deleteUser(1);
-// console.log(deletedUser);
