@@ -75,35 +75,35 @@ const newUser = {
 // const user = await createUser(newUser);
 // console.log(user);
 
-export async function updateUser(user, id) {
-  const columns = Object.keys(user);
-  const values = Object.values(user);
-  const setClause = columns.map((column) => `${column} = ?`).join(", ");
-  values.push(id);
-
-  const query = `
+export async function updateUser(id, user) {
+  const updateUserQuery = `
   UPDATE users
-  SET ${setClause}
+  SET name = ?, email = ?, age = ?, profession = ?
   WHERE id = ?
   `;
-
+  const updateLocationQuery = `
+  UPDATE locations
+  SET city =?, country =?
+  WHERE userId =?
+  `;
   try {
-    const [result] = await pool.query(query, values);
-    return result;
+    const [userUpdateResult] = await pool.query(updateUserQuery, [
+      user.name,
+      user.email,
+      user.age,
+      user.profession,
+      id,
+    ]);
+    const [locationUpdateResult] = await pool.query(updateLocationQuery, [
+      user.location.city,
+      user.location.country,
+      id,
+    ]);
+    return { userUpdateResult, locationUpdateResult };
   } catch (error) {
     console.error(error);
   }
 }
-
-// const newUser = {
-//   name: "Topu",
-//   email: "topu@gmail.com",
-//   age: 20,
-//   profession: "developer",
-// };
-
-// const updatedUser = await updateUser(newUser, 7);
-// console.log(updatedUser);
 
 export async function deleteUser(id) {
   const [result] = await pool.query(`DELETE FROM users WHERE id = ?`, [id]);
