@@ -12,10 +12,10 @@ const pool = mysql
 
 export async function getUsers() {
   const [rows] = await pool.query(`
-  SELECT users.*, locations.*, avatars.* FROM users
-  INNER JOIN locations ON users.id = locations.userId
-  INNER JOIN avatars ON users.id = avatars.userId
-  `);
+    SELECT users.*, locations.locationId AS locationId, locations.city, locations.country, avatars.avatarId AS avatarId, avatars.url FROM users
+    LEFT JOIN locations ON users.id = locations.userId
+    LEFT JOIN avatars ON users.id = avatars.userId
+    `);
 
   const users = rows.map((user) => ({
     id: user.id,
@@ -23,16 +23,22 @@ export async function getUsers() {
     email: user.email,
     age: user.age,
     profession: user.profession,
-    location: {
-      locationId: user.locationId,
-      city: user.city,
-      country: user.country,
-    },
-    avatar: {
-      avatarId: user.avatarId,
-      url: user.url,
-    },
+    location: user.locationId
+      ? {
+          locationId: user.locationId,
+          city: user.city,
+          country: user.country,
+        }
+      : null,
+    avatar: user.avatarId
+      ? {
+          avatarId: user.avatarId,
+          url: user.url,
+        }
+      : null,
   }));
+
+  // console.log(users);
   return users;
 }
 
@@ -77,11 +83,22 @@ export async function updateUser(id, user) {
   SET name = ?, email = ?, age = ?, profession = ?
   WHERE id = ?
   `;
-  const updateLocationQuery = `
-  UPDATE locations
-  SET city =?, country =?
-  WHERE userId =?
+
+  const upsertLocationQuery = `
+  INSERT INTO locations (userId, city, country)
+  VALUES (?, ?, ?)
+  ON DUPLICATE KEY UPDATE
+  city = VALUES(city),
+  country = VALUES(country)
   `;
+
+  const upsertAvatarQuery = `
+  INSERT INTO avatars (userId, url)
+  VALUES (?, ?)
+  ON DUPLICATE KEY UPDATE
+  url = VALUES(url)
+  `;
+
   try {
     const [userUpdateResult] = await pool.query(updateUserQuery, [
       user.name,
@@ -90,12 +107,18 @@ export async function updateUser(id, user) {
       user.profession,
       id,
     ]);
-    const [locationUpdateResult] = await pool.query(updateLocationQuery, [
-      user.location.city,
-      user.location.country,
+
+    const [locationUpdateResult] = await pool.query(upsertLocationQuery, [
       id,
+      user.location?.city || null,
+      user.location?.country || null,
     ]);
-    return { userUpdateResult, locationUpdateResult };
+
+    const [avatarUpdateResult] = await pool.query(upsertAvatarQuery, [
+      id,
+      user.avatar?.url || null,
+    ]);
+    return { userUpdateResult, locationUpdateResult, avatarUpdateResult };
   } catch (error) {
     console.error(error);
   }
@@ -108,8 +131,12 @@ export async function deleteUser(userId) {
   const deleteUserQuery = `
     DELETE FROM users WHERE id = ?
   `;
+  const deleteAvatarQuery = `
+    DELETE FROM avatars WHERE userId = ?
+  `;
   try {
     await pool.query(deleteLocationQuery, [userId]);
+    await pool.query(deleteAvatarQuery, [userId]);
     const [result] = await pool.query(deleteUserQuery, [userId]);
     return result;
   } catch (error) {
