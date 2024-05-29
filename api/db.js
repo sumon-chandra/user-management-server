@@ -10,12 +10,20 @@ const pool = mysql
   })
   .promise();
 
-export async function getUsers() {
-  const [rows] = await pool.query(`
-    SELECT users.*, locations.locationId AS locationId, locations.city, locations.country, avatars.avatarId AS avatarId, avatars.url FROM users
-    LEFT JOIN locations ON users.id = locations.userId
-    LEFT JOIN avatars ON users.id = avatars.userId
-    `);
+export async function getUsers(query) {
+  let sqlQuery = `
+  SELECT users.*, locations.locationId AS locationId, locations.city, locations.country, avatars.avatarId AS avatarId, avatars.url FROM users
+  LEFT JOIN locations ON users.id = locations.userId
+  LEFT JOIN avatars ON users.id = avatars.userId
+  `;
+
+  const searchQuery = [];
+  if (query !== "null") {
+    sqlQuery += `WHERE users.name LIKE ?`;
+    searchQuery.push(`%${query}%`);
+  }
+
+  const [rows] = await pool.query(sqlQuery, searchQuery);
 
   const users = rows.map((user) => ({
     id: user.id,

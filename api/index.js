@@ -13,7 +13,8 @@ app.get("/", (req, res) => {
 
 app.get("/users", async (req, res) => {
   try {
-    const users = await getUsers();
+    const { search } = req?.query;
+    const users = await getUsers(search);
     res.send(users);
   } catch (error) {
     res.status(500).send("Failed to get users");
