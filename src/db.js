@@ -10,7 +10,8 @@ const pool = mysql
   })
   .promise();
 
-export async function getUsers(query) {
+export async function getUsers({ name, email }) {
+  console.log({ name, email });
   let sqlQuery = `
   SELECT users.*, locations.locationId AS locationId, locations.city, locations.country, avatars.avatarId AS avatarId, avatars.url FROM users
   LEFT JOIN locations ON users.id = locations.userId
@@ -18,9 +19,20 @@ export async function getUsers(query) {
   `;
 
   const searchQuery = [];
-  if (query !== "null") {
-    sqlQuery += `WHERE users.name LIKE ?`;
-    searchQuery.push(`%${query}%`);
+  const conditions = [];
+
+  if (name !== "null") {
+    conditions.push(`users.name LIKE ?`);
+    searchQuery.push(`%${name}%`);
+  }
+
+  if (email !== "null") {
+    conditions.push(`users.email LIKE ?`);
+    searchQuery.push(`%${email}%`);
+  }
+
+  if (conditions.length > 0) {
+    sqlQuery += `WHERE ${conditions.join(" AND ")}`;
   }
 
   const [rows] = await pool.query(sqlQuery, searchQuery);
